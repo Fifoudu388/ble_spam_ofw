@@ -1,0 +1,43 @@
+name: Build FAP
+
+on:
+  workflow_dispatch:  # Pour lancer manuellement
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build avec uFBT (canal release)
+        uses: flipperdevices/flipperzero-ufbt-action@v0.3  # Version récente, vérifie la dernière sur GitHub
+        id: build-release
+        with:
+          sdk-channel: release  # Pour la version stable officielle
+
+      - name: Build avec uFBT (canal dev)
+        uses: flipperdevices/flipperzero-ufbt-action@v0.3
+        id: build-dev
+        with:
+          sdk-channel: dev  # Pour la version de développement (bleeding edge)
+          skip-setup: true  # Réutilise le SDK du step précédent pour gagner du temps
+
+      - name: Upload artifacts (release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}-release
+          path: ${{ steps.build-release.outputs.fap-artifacts }}
+
+      - name: Upload artifacts (dev)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}-dev
+          path: ${{ steps.build-dev.outputs.fap-artifacts }}
+
+      # Optionnel : Lint du code (vérifie le formatage)
+      - name: Lint sources
+        uses: flipperdevices/flipperzero-ufbt-action@v0.3
+        with:
+          task: lint
+          skip-setup: true
